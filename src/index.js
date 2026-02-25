@@ -2,8 +2,8 @@
 // USERS — hardcoded credentials and Telegram chat IDs
 // =============================================================================
 const USERS = [
-  { username: "alice", password: "hunter2", telegram_chat_id: "123456789" },
-  { username: "bob",   password: "s3cur3",  telegram_chat_id: "987654321" },
+  { username: "saman", password: "javad123", telegram_chat_id: "YOUR_CHAT_ID" },
+  { username: "javad",   password: "freedom",  telegram_chat_id: "YOUR_CHAT_ID" },
 ];
 
 // =============================================================================
@@ -284,7 +284,7 @@ const HTML_PAGE = `<!DOCTYPE html>
 
   <form id="login-form" autocomplete="off">
     <label for="username">Username</label>
-    <input type="text" id="username" name="username" placeholder="alice" required />
+    <input type="text" id="username" name="username" placeholder="for example javad :D" required />
 
     <label for="password">Password</label>
     <input type="password" id="password" name="password" placeholder="••••••••" required />
