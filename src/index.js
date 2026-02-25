@@ -55,7 +55,7 @@ async function verifyToken(token, secret) {
 }
 
 // =============================================================================
-// HTML_PAGE — full single-page frontend
+// HTML_PAGE — "Transmission" aesthetic: dark signals + Swiss grid + orange glow
 // =============================================================================
 
 const HTML_PAGE = `<!DOCTYPE html>
@@ -63,251 +63,438 @@ const HTML_PAGE = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Uploader</title>
+  <title>Uplink &mdash; Secure File Transfer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Azeret+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg:          #07090e;
+      --surface:     rgba(11, 14, 21, 0.94);
+      --border:      rgba(255, 85, 0, 0.15);
+      --accent:      #ff5500;
+      --accent-lt:   #ff7a2e;
+      --accent-gold: #ffb547;
+      --text:        #ebe5dd;
+      --text-dim:    rgba(235, 229, 221, 0.4);
+      --success:     #00e8a0;
+      --success-bg:  rgba(0, 232, 160, 0.07);
+      --error:       #ff3355;
+      --error-bg:    rgba(255, 51, 85, 0.08);
+      --mono: 'Azeret Mono', 'Courier New', monospace;
+      --sans: 'Syne', system-ui, sans-serif;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0f172a;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #e2e8f0;
-    }
-
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,.5);
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 1.75rem;
-    }
-
-    .logo svg { width: 48px; height: 48px; }
-
-    h1 {
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: .25rem;
-      color: #f1f5f9;
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: .85rem;
-      color: #64748b;
-      margin-bottom: 1.75rem;
-    }
-
-    label {
-      display: block;
-      font-size: .8rem;
-      font-weight: 600;
-      color: #94a3b8;
-      margin-bottom: .4rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-
-    input[type="text"], input[type="password"] {
-      width: 100%;
-      padding: .7rem 1rem;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #f1f5f9;
-      font-size: .95rem;
-      margin-bottom: 1rem;
-      outline: none;
-      transition: border-color .2s;
-    }
-
-    input[type="text"]:focus, input[type="password"]:focus {
-      border-color: #3b82f6;
-    }
-
-    .btn {
-      display: block;
-      width: 100%;
-      padding: .75rem;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .2s, transform .1s;
-    }
-
-    .btn:hover  { background: #2563eb; }
-    .btn:active { transform: scale(.98); }
-    .btn:disabled { background: #1e40af; opacity: .6; cursor: not-allowed; }
-
-    .error-msg {
-      margin-top: .75rem;
-      padding: .65rem 1rem;
-      background: #450a0a;
-      border: 1px solid #b91c1c;
-      border-radius: 8px;
-      font-size: .85rem;
-      color: #fca5a5;
-      display: none;
-    }
-
-    /* ---- upload view ---- */
-    .user-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-
-    .user-name {
-      font-size: .9rem;
-      color: #94a3b8;
-    }
-
-    .user-name strong { color: #f1f5f9; }
-
-    .logout-btn {
-      background: none;
-      border: 1px solid #334155;
-      color: #94a3b8;
-      padding: .3rem .75rem;
-      border-radius: 6px;
-      font-size: .8rem;
-      cursor: pointer;
-      transition: border-color .2s, color .2s;
-    }
-
-    .logout-btn:hover { border-color: #64748b; color: #e2e8f0; }
-
-    .drop-zone {
-      border: 2px dashed #334155;
-      border-radius: 12px;
-      padding: 2.5rem 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-      margin-bottom: 1.25rem;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      color: var(--text);
+      overflow: hidden;
       position: relative;
     }
 
+    /* ── Background ── */
+    .bg-grid {
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,85,0,0.055) 1px, transparent 1px);
+      background-size: 26px 26px;
+      pointer-events: none; z-index: 0;
+    }
+    .bg-orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); pointer-events: none; z-index: 0;
+    }
+    .bg-orb-1 {
+      width: 640px; height: 640px;
+      background: radial-gradient(circle, rgba(255,85,0,0.16) 0%, transparent 65%);
+      top: -220px; right: -160px;
+      animation: orbA 24s ease-in-out infinite alternate;
+    }
+    .bg-orb-2 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(255,181,71,0.09) 0%, transparent 65%);
+      bottom: -160px; left: -120px;
+      animation: orbB 30s ease-in-out infinite alternate;
+    }
+    .bg-orb-3 {
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, rgba(255,85,0,0.07) 0%, transparent 65%);
+      top: 55%; left: 45%;
+      animation: orbA 38s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes orbA {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(35px, 20px) scale(1.08); }
+    }
+    @keyframes orbB {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(-25px, 30px) scale(1.12); }
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 452px;
+      margin: 1.5rem;
+      padding: 2.25rem 2.25rem 2rem;
+      background: var(--surface);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      box-shadow:
+        0 0 0 1px rgba(255,85,0,0.04) inset,
+        0 50px 100px rgba(0,0,0,0.75),
+        0 0 90px rgba(255,85,0,0.07);
+      animation: cardIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(28px) scale(0.96); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* corner reticle marks */
+    .card::before {
+      content: ''; position: absolute;
+      top: -1px; left: -1px;
+      width: 16px; height: 16px;
+      border-top: 2px solid var(--accent);
+      border-left: 2px solid var(--accent);
+      border-radius: 2px 0 0 0;
+    }
+    .card::after {
+      content: ''; position: absolute;
+      bottom: -1px; right: -1px;
+      width: 16px; height: 16px;
+      border-bottom: 2px solid var(--accent);
+      border-right: 2px solid var(--accent);
+      border-radius: 0 0 2px 0;
+    }
+
+    /* ── Brand ── */
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-mark {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      display: grid; place-items: center; flex-shrink: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+    }
+    .brand-mark svg { width: 17px; height: 17px; fill: #000; }
+    .brand-name {
+      font-family: var(--sans); font-weight: 800;
+      font-size: 0.82rem; letter-spacing: 0.22em;
+      text-transform: uppercase; line-height: 1;
+    }
+    .brand-tag {
+      font-size: 0.58rem; color: var(--text-dim);
+      letter-spacing: 0.14em; text-transform: uppercase; margin-top: 4px;
+    }
+
+    /* ── View headings ── */
+    .view-title {
+      font-family: var(--sans); font-weight: 800;
+      font-size: 2rem; letter-spacing: -0.03em; line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+    .view-title em { font-style: normal; color: var(--accent); }
+    .view-sub {
+      font-size: 0.65rem; color: var(--text-dim);
+      letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 1.8rem;
+    }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 1.1rem; }
+    .field label {
+      display: block; font-size: 0.58rem; font-weight: 500;
+      color: var(--text-dim); letter-spacing: 0.2em;
+      text-transform: uppercase; margin-bottom: 7px;
+    }
+    .field input {
+      display: block; width: 100%;
+      background: rgba(255,255,255,0.025);
+      border: none;
+      border-bottom: 1px solid rgba(255,85,0,0.22);
+      border-radius: 2px 2px 0 0;
+      outline: none; padding: 0.68rem 0.6rem;
+      color: var(--text); font-family: var(--mono); font-size: 0.88rem;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    .field input::placeholder { color: var(--text-dim); opacity: 0.55; }
+    .field input:focus {
+      background: rgba(255,85,0,0.04);
+      border-bottom-color: var(--accent);
+      box-shadow: 0 2px 0 rgba(255,85,0,0.18);
+    }
+
+    /* ── Primary button ── */
+    .btn-primary {
+      display: block; width: 100%; margin-top: 1.3rem;
+      padding: 0.9rem 1rem;
+      background: var(--accent); color: #000;
+      border: none; border-radius: 2px;
+      font-family: var(--sans); font-weight: 700;
+      font-size: 0.77rem; letter-spacing: 0.2em; text-transform: uppercase;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: background 0.18s, box-shadow 0.18s, transform 0.1s;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.22) 0%, transparent 55%);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .btn-primary:hover {
+      background: var(--accent-lt);
+      box-shadow: 0 0 40px rgba(255,85,0,0.5), 0 6px 24px rgba(255,85,0,0.28);
+    }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Alert ── */
+    .alert {
+      display: none; margin-top: 0.8rem;
+      padding: 0.62rem 0.8rem; font-size: 0.74rem;
+      border-left: 2px solid; border-radius: 0 2px 2px 0;
+      letter-spacing: 0.03em; animation: slideIn 0.25s ease;
+    }
+    .alert.error {
+      background: var(--error-bg); border-color: var(--error);
+      color: rgba(255,80,110,0.92);
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── Upload topbar ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.7rem; color: var(--text-dim);
+    }
+    .user-chip strong { color: var(--text); font-weight: 500; }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 8px var(--success);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+    .btn-logout {
+      font-family: var(--mono); font-size: 0.64rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      background: none; border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-dim); padding: 0.32rem 0.7rem; border-radius: 2px;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      position: relative; padding: 2.8rem 1.5rem;
+      border: 1px dashed rgba(255,85,0,0.26); border-radius: 3px;
+      text-align: center; cursor: pointer; overflow: hidden;
+      margin-bottom: 0.85rem;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .drop-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 115%, rgba(255,85,0,0.08), transparent 58%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .drop-zone:hover .drop-glow,
+    .drop-zone.dragover .drop-glow { opacity: 1; }
     .drop-zone.dragover {
-      border-color: #3b82f6;
-      background: rgba(59,130,246,.07);
+      border-color: var(--accent); border-style: solid;
+      background: rgba(255,85,0,0.03);
+    }
+    .drop-zone.has-file { border-color: rgba(0,232,160,0.38); border-style: solid; }
+    .drop-zone.has-file .drop-glow {
+      background: radial-gradient(ellipse at 50% 115%, rgba(0,232,160,0.07), transparent 58%);
+      opacity: 1;
     }
 
-    .drop-zone.has-file {
-      border-color: #22c55e;
-      background: rgba(34,197,94,.05);
+    .drop-ring {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 1px solid rgba(255,85,0,0.26); margin-bottom: 1rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
     }
-
-    .drop-icon { font-size: 2.5rem; margin-bottom: .5rem; }
-
-    .drop-text { font-size: .9rem; color: #64748b; }
-    .drop-text strong { color: #94a3b8; }
-
-    .file-name {
-      margin-top: .5rem;
-      font-size: .85rem;
-      color: #22c55e;
-      word-break: break-all;
-      display: none;
+    .drop-zone.dragover .drop-ring { border-color: var(--accent); box-shadow: 0 0 22px rgba(255,85,0,0.32); }
+    .drop-zone.has-file .drop-ring { border-color: rgba(0,232,160,0.5); box-shadow: 0 0 18px rgba(0,232,160,0.2); }
+    .drop-ring svg {
+      width: 23px; height: 23px; stroke: var(--accent); stroke-width: 1.5;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+      transition: stroke 0.25s;
     }
+    .drop-zone.has-file .drop-ring svg { stroke: var(--success); }
 
+    .drop-title {
+      font-family: var(--sans); font-weight: 700; font-size: 0.9rem;
+      color: var(--text); margin-bottom: 0.35rem;
+    }
+    .drop-hint { font-size: 0.67rem; color: var(--text-dim); letter-spacing: 0.07em; }
+    .file-meta {
+      display: none; margin-top: 0.75rem;
+      font-size: 0.69rem; color: var(--success); letter-spacing: 0.05em;
+    }
     #file-input { display: none; }
 
+    /* ── Progress ── */
     .progress-wrap {
-      height: 6px;
-      background: #0f172a;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-      display: none;
+      display: none; height: 2px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px; overflow: hidden;
+      margin-bottom: 0.85rem;
     }
-
     .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #3b82f6, #06b6d4);
-      border-radius: 3px;
-      transition: width .1s linear;
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+      border-radius: 2px;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px rgba(255,85,0,0.6);
+      position: relative; overflow: hidden;
+    }
+    .progress-bar::after {
+      content: ''; position: absolute;
+      top: 0; bottom: 0; right: 0; width: 60px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+      animation: shim 0.9s linear infinite;
+    }
+    @keyframes shim {
+      from { transform: translateX(-60px); }
+      to   { transform: translateX(60px); }
     }
 
+    /* ── Result ── */
     .result-msg {
-      margin-top: .75rem;
-      padding: .65rem 1rem;
-      border-radius: 8px;
-      font-size: .85rem;
-      display: none;
+      display: none; margin-top: 0.75rem;
+      padding: 0.62rem 0.8rem; font-size: 0.74rem;
+      border-left: 2px solid; border-radius: 0 2px 2px 0;
+      letter-spacing: 0.03em;
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
     .result-msg.success {
-      background: #052e16;
-      border: 1px solid #16a34a;
-      color: #86efac;
+      background: var(--success-bg); border-color: var(--success);
+      color: rgba(0,232,160,0.92);
     }
-
     .result-msg.error {
-      background: #450a0a;
-      border: 1px solid #b91c1c;
-      color: #fca5a5;
+      background: var(--error-bg); border-color: var(--error);
+      color: rgba(255,80,110,0.92);
     }
+    .result-msg a { color: var(--accent-gold); text-decoration: none; }
+    .result-msg a:hover { text-decoration: underline; }
 
-    .result-msg a { color: #67e8f9; }
+    /* ── Footer ── */
+    .foot {
+      display: flex; align-items: center; gap: 7px;
+      margin-top: 1.3rem; padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.58rem; color: var(--text-dim);
+      letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .foot-dot {
+      width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+      background: var(--success); box-shadow: 0 0 6px var(--success);
+    }
   </style>
 </head>
 <body>
 
-<!-- ===================== LOGIN VIEW ===================== -->
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+
+<!-- ═══════════════ LOGIN VIEW ═══════════════ -->
 <div class="card" id="login-view">
-  <div class="logo">
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="24" cy="24" r="24" fill="#2563EB"/>
-      <path d="M10 24L22 36L38 14" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Uplink</div>
+      <div class="brand-tag">Telegram File Transfer</div>
+    </div>
   </div>
-  <h1>Telegram Uploader</h1>
-  <p class="subtitle">Sign in to send files to Telegram</p>
+
+  <div class="view-title">Sign <em>In</em></div>
+  <div class="view-sub">Authenticate to transmit files</div>
 
   <form id="login-form" autocomplete="off">
-    <label for="username">Username</label>
-    <input type="text" id="username" name="username" placeholder="for example javad :D" required />
-
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password" placeholder="••••••••" required />
-
-    <button class="btn" type="submit" id="login-btn">Sign In</button>
-    <div class="error-msg" id="login-error"></div>
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="e.g. saman" required />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;" required />
+    </div>
+    <button class="btn-primary" type="submit" id="login-btn">Authenticate</button>
+    <div class="alert error" id="login-error"></div>
   </form>
-</div>
 
-<!-- ===================== UPLOAD VIEW ===================== -->
-<div class="card" id="upload-view" style="display:none">
-  <div class="user-bar">
-    <span class="user-name">Signed in as <strong id="display-name"></strong></span>
-    <button class="logout-btn" id="logout-btn">Logout</button>
+  <div class="foot">
+    <div class="foot-dot"></div>
+    <span>JWT &middot; HMAC-SHA256 &middot; No storage</span>
   </div>
 
-  <h1>Send a File</h1>
-  <p class="subtitle" style="margin-bottom:1.25rem">Max 50 MB · Sent via Telegram Bot</p>
+</div>
+
+<!-- ═══════════════ UPLOAD VIEW ═══════════════ -->
+<div class="card" id="upload-view" style="display:none">
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Uplink</div>
+      <div class="brand-tag">Telegram File Transfer</div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="user-chip">
+      <div class="live-dot"></div>
+      <span>Session: <strong id="display-name"></strong></span>
+    </div>
+    <button class="btn-logout" id="logout-btn">Logout</button>
+  </div>
+
+  <div class="view-title">Trans<em>mit</em></div>
+  <div class="view-sub">Max 50 MB &middot; Forwarded via Telegram Bot</div>
 
   <div class="drop-zone" id="drop-zone">
-    <div class="drop-icon">📂</div>
-    <p class="drop-text"><strong>Drag &amp; drop</strong> a file here<br/>or click to browse</p>
-    <div class="file-name" id="file-name-label"></div>
+    <div class="drop-glow"></div>
+    <div class="drop-ring">
+      <svg viewBox="0 0 24 24">
+        <polyline points="16 16 12 12 8 16"></polyline>
+        <line x1="12" y1="12" x2="12" y2="21"></line>
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+      </svg>
+    </div>
+    <div class="drop-title">Drop file here</div>
+    <div class="drop-hint">or click to browse &middot; max 50 MB</div>
+    <div class="file-meta" id="file-meta"></div>
   </div>
   <input type="file" id="file-input" />
 
@@ -315,23 +502,28 @@ const HTML_PAGE = `<!DOCTYPE html>
     <div class="progress-bar" id="progress-bar"></div>
   </div>
 
-  <button class="btn" id="upload-btn">Upload</button>
+  <button class="btn-primary" id="upload-btn">Transmit File</button>
   <div class="result-msg" id="result-msg"></div>
+
+  <div class="foot">
+    <div class="foot-dot"></div>
+    <span>Encrypted &middot; Bot API &middot; No server storage</span>
+  </div>
+
 </div>
 
 <script>
-  const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
+  var MAX_BYTES = 50 * 1024 * 1024;
 
-  // ---- helpers ----
-  function getToken()       { return localStorage.getItem("tmu_token"); }
-  function setToken(t)      { localStorage.setItem("tmu_token", t); }
-  function clearToken()     { localStorage.removeItem("tmu_token"); }
+  function getToken()   { return localStorage.getItem("tmu_token"); }
+  function setToken(t)  { localStorage.setItem("tmu_token", t); }
+  function clearToken() { localStorage.removeItem("tmu_token"); }
 
-  function parseJwtPayload(token) {
+  function parsePayload(token) {
     try {
-      const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      var b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
       return JSON.parse(atob(b64));
-    } catch { return null; }
+    } catch(e) { return null; }
   }
 
   function showView(name) {
@@ -339,13 +531,13 @@ const HTML_PAGE = `<!DOCTYPE html>
     document.getElementById("upload-view").style.display = name === "upload" ? "" : "none";
   }
 
-  // ---- init ----
-  (function init() {
-    const token = getToken();
+  // init
+  (function() {
+    var token = getToken();
     if (token) {
-      const payload = parseJwtPayload(token);
-      if (payload && payload.exp > Math.floor(Date.now() / 1000)) {
-        document.getElementById("display-name").textContent = payload.sub;
+      var p = parsePayload(token);
+      if (p && p.exp > Math.floor(Date.now() / 1000)) {
+        document.getElementById("display-name").textContent = p.sub;
         showView("upload");
         return;
       }
@@ -354,51 +546,53 @@ const HTML_PAGE = `<!DOCTYPE html>
     showView("login");
   })();
 
-  // ---- login ----
-  document.getElementById("login-form").addEventListener("submit", async e => {
+  // login
+  document.getElementById("login-form").addEventListener("submit", function(e) {
     e.preventDefault();
-    const btn = document.getElementById("login-btn");
-    const errEl = document.getElementById("login-error");
+    var btn   = document.getElementById("login-btn");
+    var errEl = document.getElementById("login-error");
     errEl.style.display = "none";
     btn.disabled = true;
-    btn.textContent = "Signing in…";
+    btn.textContent = "Authenticating\u2026";
 
-    try {
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: document.getElementById("username").value,
-          password: document.getElementById("password").value,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
-      setToken(data.token);
-      document.getElementById("display-name").textContent = parseJwtPayload(data.token).sub;
+    fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
+      })
+    })
+    .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, d: d }; }); })
+    .then(function(r) {
+      if (!r.ok) throw new Error(r.d.error || "Login failed");
+      setToken(r.d.token);
+      document.getElementById("display-name").textContent = parsePayload(r.d.token).sub;
       showView("upload");
-    } catch (err) {
+    })
+    .catch(function(err) {
       errEl.textContent = err.message;
       errEl.style.display = "block";
-    } finally {
+    })
+    .finally(function() {
       btn.disabled = false;
-      btn.textContent = "Sign In";
-    }
+      btn.textContent = "Authenticate";
+    });
   });
 
-  // ---- logout ----
-  document.getElementById("logout-btn").addEventListener("click", () => {
+  // logout
+  document.getElementById("logout-btn").addEventListener("click", function() {
     clearToken();
     document.getElementById("username").value = "";
     document.getElementById("password").value = "";
     showView("login");
   });
 
-  // ---- drag & drop / file picker ----
-  let selectedFile = null;
-  const dropZone = document.getElementById("drop-zone");
-  const fileInput = document.getElementById("file-input");
-  const fileNameLabel = document.getElementById("file-name-label");
+  // drag & drop
+  var selectedFile = null;
+  var dropZone     = document.getElementById("drop-zone");
+  var fileInput    = document.getElementById("file-input");
+  var fileMeta     = document.getElementById("file-meta");
 
   function selectFile(file) {
     if (file.size > MAX_BYTES) {
@@ -407,97 +601,88 @@ const HTML_PAGE = `<!DOCTYPE html>
     }
     selectedFile = file;
     dropZone.classList.add("has-file");
-    fileNameLabel.textContent = file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
-    fileNameLabel.style.display = "block";
+    fileMeta.textContent = file.name + "  \u2014  " + (file.size / 1048576).toFixed(2) + " MB";
+    fileMeta.style.display = "block";
     document.getElementById("result-msg").style.display = "none";
   }
 
-  dropZone.addEventListener("click", () => fileInput.click());
-
-  fileInput.addEventListener("change", () => {
+  dropZone.addEventListener("click", function() { fileInput.click(); });
+  fileInput.addEventListener("change", function() {
     if (fileInput.files[0]) selectFile(fileInput.files[0]);
   });
-
-  dropZone.addEventListener("dragover", e => {
-    e.preventDefault();
-    dropZone.classList.add("dragover");
+  dropZone.addEventListener("dragover", function(e) {
+    e.preventDefault(); dropZone.classList.add("dragover");
   });
-
-  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
-
-  dropZone.addEventListener("drop", e => {
-    e.preventDefault();
-    dropZone.classList.remove("dragover");
+  dropZone.addEventListener("dragleave", function() { dropZone.classList.remove("dragover"); });
+  dropZone.addEventListener("drop", function(e) {
+    e.preventDefault(); dropZone.classList.remove("dragover");
     if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
   });
 
-  // ---- upload with XHR for progress events ----
+  // upload via XHR for progress events
   function showResult(type, html) {
-    const el = document.getElementById("result-msg");
+    var el = document.getElementById("result-msg");
     el.className = "result-msg " + type;
     el.innerHTML = html;
     el.style.display = "block";
   }
 
-  document.getElementById("upload-btn").addEventListener("click", () => {
+  document.getElementById("upload-btn").addEventListener("click", function() {
     if (!selectedFile) { showResult("error", "Please select a file first."); return; }
-
-    const token = getToken();
+    var token = getToken();
     if (!token) { clearToken(); showView("login"); return; }
 
-    const progressWrap = document.getElementById("progress-wrap");
-    const progressBar  = document.getElementById("progress-bar");
-    const uploadBtn    = document.getElementById("upload-btn");
+    var progressWrap = document.getElementById("progress-wrap");
+    var progressBar  = document.getElementById("progress-bar");
+    var uploadBtn    = document.getElementById("upload-btn");
 
     progressWrap.style.display = "block";
     progressBar.style.width = "0%";
     uploadBtn.disabled = true;
-    uploadBtn.textContent = "Uploading…";
+    uploadBtn.textContent = "Transmitting\u2026";
     document.getElementById("result-msg").style.display = "none";
 
-    const form = new FormData();
+    var form = new FormData();
     form.append("file", selectedFile, selectedFile.name);
 
-    const xhr = new XMLHttpRequest();
+    var xhr = new XMLHttpRequest();
 
-    xhr.upload.addEventListener("progress", e => {
+    xhr.upload.addEventListener("progress", function(e) {
       if (e.lengthComputable) {
         progressBar.style.width = Math.round(e.loaded / e.total * 100) + "%";
       }
     });
 
-    xhr.addEventListener("load", () => {
+    xhr.addEventListener("load", function() {
       progressBar.style.width = "100%";
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
+      uploadBtn.textContent = "Transmit File";
 
       try {
-        const data = JSON.parse(xhr.responseText);
+        var data = JSON.parse(xhr.responseText);
         if (xhr.status === 200 && data.success) {
-          const linkHtml = data.message_link
-            ? ' &mdash; <a href="' + data.message_link + '" target="_blank" rel="noopener">View in Telegram</a>'
+          var link = data.message_link
+            ? " &mdash; <a href='" + data.message_link + "' target='_blank' rel='noopener'>View in Telegram</a>"
             : "";
-          showResult("success", "File sent to Telegram!" + linkHtml);
-          // reset
+          showResult("success", "&#10003; File delivered to Telegram." + link);
           selectedFile = null;
           dropZone.classList.remove("has-file");
-          fileNameLabel.style.display = "none";
+          fileMeta.style.display = "none";
           fileInput.value = "";
         } else {
           showResult("error", data.error || "Upload failed.");
         }
-      } catch {
-        showResult("error", "Unexpected response from server.");
+      } catch(e) {
+        showResult("error", "Unexpected server response.");
       }
-
-      setTimeout(() => { progressWrap.style.display = "none"; }, 1500);
+      setTimeout(function() { progressWrap.style.display = "none"; }, 1800);
     });
 
-    xhr.addEventListener("error", () => {
+    xhr.addEventListener("error", function() {
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
+      uploadBtn.textContent = "Transmit File";
       progressWrap.style.display = "none";
-      showResult("error", "Network error — upload failed.");
+      showResult("error", "Network error \u2014 transmission failed.");
     });
 
     xhr.open("POST", "/upload");
@@ -545,7 +730,6 @@ async function handleLogin(request, env) {
 }
 
 async function handleUpload(request, env) {
-  // Verify JWT
   const authHeader = request.headers.get("Authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (!token) {
@@ -557,7 +741,6 @@ async function handleUpload(request, env) {
     return Response.json({ error: "Invalid or expired token" }, { status: 401 });
   }
 
-  // Parse multipart form
   let formData;
   try { formData = await request.formData(); }
   catch { return Response.json({ error: "Invalid form data" }, { status: 400 }); }
@@ -571,7 +754,6 @@ async function handleUpload(request, env) {
     return Response.json({ error: "File exceeds 50 MB limit" }, { status: 413 });
   }
 
-  // Forward to Telegram
   const tgForm = new FormData();
   tgForm.append("chat_id", payload.chat_id);
   tgForm.append("document", file, file.name);
@@ -597,10 +779,9 @@ async function handleUpload(request, env) {
   const messageId = tgData.result.message_id;
   const chatId    = String(payload.chat_id);
 
-  // Build public link for supergroups (chat_id starts with -100)
   let messageLink = null;
   if (chatId.startsWith("-100")) {
-    const numericId = chatId.slice(4); // strip -100
+    const numericId = chatId.slice(4);
     messageLink = `https://t.me/c/${numericId}/${messageId}`;
   }
 
@@ -619,7 +800,6 @@ export default {
     const { method, url } = request;
     const { pathname }    = new URL(url);
 
-    // CORS preflight
     if (method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
