@@ -2,6 +2,10 @@ name = "telegram-mini-uploader"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
+# Static assets (avatar images etc.) served directly from ./public
+[assets]
+directory = "./public"
+
 # Secrets set via CLI (never in this file):
 # wrangler secret put BOT_TOKEN
 # wrangler secret put JWT_SECRET

@@ -1,9 +1,11 @@
 // =============================================================================
-// USERS — hardcoded credentials and Telegram chat IDs
+// USERS — credentials, Telegram chat IDs, and avatar filenames
+// Place avatar images in public/avatars/<filename>
+// If a user has no avatar, set avatar to null
 // =============================================================================
 const USERS = [
-  { username: "saman", password: "javad123", telegram_chat_id: "YOUR_CHAT_ID" },
-  { username: "javad",   password: "freedom",  telegram_chat_id: "YOUR_CHAT_ID" },
+  { username: "saman", password: "javad123", telegram_chat_id: "YOUR_CHAT_ID", avatar: "saman.jpg" },
+  { username: "javad", password: "freedom",  telegram_chat_id: "YOUR_CHAT_ID", avatar: "javad.jpg" },
 ];
 
 // =============================================================================
@@ -27,9 +29,9 @@ async function createToken(payload, secret) {
     { name: "HMAC", hash: "SHA-256" },
     false, ["sign"]
   );
-  const header  = b64urlEncode(enc.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
-  const body    = b64urlEncode(enc.encode(JSON.stringify(payload)));
-  const sig     = await crypto.subtle.sign("HMAC", key, enc.encode(`${header}.${body}`));
+  const header = b64urlEncode(enc.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const body   = b64urlEncode(enc.encode(JSON.stringify(payload)));
+  const sig    = await crypto.subtle.sign("HMAC", key, enc.encode(`${header}.${body}`));
   return `${header}.${body}.${b64urlEncode(sig)}`;
 }
 
@@ -55,7 +57,7 @@ async function verifyToken(token, secret) {
 }
 
 // =============================================================================
-// HTML_PAGE — "Transmission" aesthetic: dark signals + Swiss grid + orange glow
+// HTML_PAGE — "Transmission" aesthetic with avatar + multi-file upload
 // =============================================================================
 
 const HTML_PAGE = `<!DOCTYPE html>
@@ -127,20 +129,19 @@ const HTML_PAGE = `<!DOCTYPE html>
       top: 55%; left: 45%;
       animation: orbA 38s ease-in-out infinite alternate-reverse;
     }
-
     @keyframes orbA {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(35px, 20px) scale(1.08); }
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(35px,20px) scale(1.08); }
     }
     @keyframes orbB {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(-25px, 30px) scale(1.12); }
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-25px,30px) scale(1.12); }
     }
 
     /* ── Card ── */
     .card {
       position: relative; z-index: 1;
-      width: 100%; max-width: 452px;
+      width: 100%; max-width: 468px;
       margin: 1.5rem;
       padding: 2.25rem 2.25rem 2rem;
       background: var(--surface);
@@ -158,43 +159,34 @@ const HTML_PAGE = `<!DOCTYPE html>
       from { opacity: 0; transform: translateY(28px) scale(0.96); }
       to   { opacity: 1; transform: none; }
     }
-
-    /* corner reticle marks */
     .card::before {
       content: ''; position: absolute;
-      top: -1px; left: -1px;
-      width: 16px; height: 16px;
-      border-top: 2px solid var(--accent);
-      border-left: 2px solid var(--accent);
+      top: -1px; left: -1px; width: 16px; height: 16px;
+      border-top: 2px solid var(--accent); border-left: 2px solid var(--accent);
       border-radius: 2px 0 0 0;
     }
     .card::after {
       content: ''; position: absolute;
-      bottom: -1px; right: -1px;
-      width: 16px; height: 16px;
-      border-bottom: 2px solid var(--accent);
-      border-right: 2px solid var(--accent);
+      bottom: -1px; right: -1px; width: 16px; height: 16px;
+      border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent);
       border-radius: 0 0 2px 0;
     }
 
     /* ── Brand ── */
     .brand {
       display: flex; align-items: center; gap: 12px;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
+      margin-bottom: 2rem; padding-bottom: 1.5rem;
       border-bottom: 1px solid var(--border);
     }
     .brand-mark {
-      width: 34px; height: 34px;
-      background: var(--accent);
+      width: 34px; height: 34px; background: var(--accent);
       display: grid; place-items: center; flex-shrink: 0;
       clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
     }
     .brand-mark svg { width: 17px; height: 17px; fill: #000; }
     .brand-name {
-      font-family: var(--sans); font-weight: 800;
-      font-size: 0.82rem; letter-spacing: 0.22em;
-      text-transform: uppercase; line-height: 1;
+      font-family: var(--sans); font-weight: 800; font-size: 0.82rem;
+      letter-spacing: 0.22em; text-transform: uppercase; line-height: 1;
     }
     .brand-tag {
       font-size: 0.58rem; color: var(--text-dim);
@@ -204,8 +196,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     /* ── View headings ── */
     .view-title {
       font-family: var(--sans); font-weight: 800;
-      font-size: 2rem; letter-spacing: -0.03em; line-height: 1;
-      margin-bottom: 0.35rem;
+      font-size: 2rem; letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.35rem;
     }
     .view-title em { font-style: normal; color: var(--accent); }
     .view-sub {
@@ -213,7 +204,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 1.8rem;
     }
 
-    /* ── Fields ── */
+    /* ── Login fields ── */
     .field { margin-bottom: 1.1rem; }
     .field label {
       display: block; font-size: 0.58rem; font-weight: 500;
@@ -223,11 +214,10 @@ const HTML_PAGE = `<!DOCTYPE html>
     .field input {
       display: block; width: 100%;
       background: rgba(255,255,255,0.025);
-      border: none;
-      border-bottom: 1px solid rgba(255,85,0,0.22);
-      border-radius: 2px 2px 0 0;
-      outline: none; padding: 0.68rem 0.6rem;
-      color: var(--text); font-family: var(--mono); font-size: 0.88rem;
+      border: none; border-bottom: 1px solid rgba(255,85,0,0.22);
+      border-radius: 2px 2px 0 0; outline: none;
+      padding: 0.68rem 0.6rem; color: var(--text);
+      font-family: var(--mono); font-size: 0.88rem;
       transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
     .field input::placeholder { color: var(--text-dim); opacity: 0.55; }
@@ -240,8 +230,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     /* ── Primary button ── */
     .btn-primary {
       display: block; width: 100%; margin-top: 1.3rem;
-      padding: 0.9rem 1rem;
-      background: var(--accent); color: #000;
+      padding: 0.9rem 1rem; background: var(--accent); color: #000;
       border: none; border-radius: 2px;
       font-family: var(--sans); font-weight: 700;
       font-size: 0.77rem; letter-spacing: 0.2em; text-transform: uppercase;
@@ -253,10 +242,7 @@ const HTML_PAGE = `<!DOCTYPE html>
       background: linear-gradient(120deg, rgba(255,255,255,0.22) 0%, transparent 55%);
       opacity: 0; transition: opacity 0.2s;
     }
-    .btn-primary:hover {
-      background: var(--accent-lt);
-      box-shadow: 0 0 40px rgba(255,85,0,0.5), 0 6px 24px rgba(255,85,0,0.28);
-    }
+    .btn-primary:hover { background: var(--accent-lt); box-shadow: 0 0 40px rgba(255,85,0,0.5), 0 6px 24px rgba(255,85,0,0.28); }
     .btn-primary:hover::after { opacity: 1; }
     .btn-primary:active { transform: scale(0.99); }
     .btn-primary:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
@@ -268,48 +254,73 @@ const HTML_PAGE = `<!DOCTYPE html>
       border-left: 2px solid; border-radius: 0 2px 2px 0;
       letter-spacing: 0.03em; animation: slideIn 0.25s ease;
     }
-    .alert.error {
-      background: var(--error-bg); border-color: var(--error);
-      color: rgba(255,80,110,0.92);
-    }
+    .alert.error { background: var(--error-bg); border-color: var(--error); color: rgba(255,80,110,0.92); }
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-8px); }
       to   { opacity: 1; transform: none; }
     }
 
-    /* ── Upload topbar ── */
+    /* ── Upload topbar with avatar ── */
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1.5rem;
     }
-    .user-chip {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.7rem; color: var(--text-dim);
+    .user-chip { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+    .avatar-wrap { position: relative; flex-shrink: 0; }
+    .avatar-img {
+      width: 54px; height: 54px; border-radius: 50%;
+      object-fit: cover; display: block;
+      border: 2px solid rgba(255,85,0,0.45);
+      box-shadow: 0 0 18px rgba(255,85,0,0.3);
     }
-    .user-chip strong { color: var(--text); font-weight: 500; }
+    .avatar-fb {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: var(--accent); color: #000;
+      display: none; align-items: center; justify-content: center;
+      font-family: var(--sans); font-weight: 800; font-size: 1rem;
+      letter-spacing: 0.05em;
+      border: 2px solid var(--accent-lt);
+      box-shadow: 0 0 18px rgba(255,85,0,0.35);
+    }
     .live-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--success); box-shadow: 0 0 8px var(--success);
+      position: absolute; bottom: 1px; right: 1px;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 7px var(--success);
+      border: 2px solid var(--bg);
       animation: pulse 2.2s ease-in-out infinite;
     }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    .user-info { min-width: 0; }
+    .user-label { font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+    .user-name-text { font-size: 0.82rem; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     .btn-logout {
       font-family: var(--mono); font-size: 0.64rem;
       letter-spacing: 0.14em; text-transform: uppercase;
       background: none; border: 1px solid rgba(255,255,255,0.1);
       color: var(--text-dim); padding: 0.32rem 0.7rem; border-radius: 2px;
-      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+      cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.2s, color 0.2s;
     }
     .btn-logout:hover { border-color: var(--error); color: var(--error); }
 
     /* ── Drop zone ── */
     .drop-zone {
-      position: relative; padding: 2.8rem 1.5rem;
+      position: relative;
+      padding: 2.5rem 1.5rem;
       border: 1px dashed rgba(255,85,0,0.26); border-radius: 3px;
       text-align: center; cursor: pointer; overflow: hidden;
-      margin-bottom: 0.85rem;
-      transition: border-color 0.25s, background 0.25s;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.25s, background 0.25s, padding 0.3s;
     }
+    .drop-zone.compact { padding: 1rem 1.5rem; }
+    .drop-zone.compact .drop-ring { width: 32px; height: 32px; margin-bottom: 0.5rem; }
+    .drop-zone.compact .drop-ring svg { width: 14px; height: 14px; }
+    .drop-zone.compact .drop-title { font-size: 0.78rem; margin-bottom: 0.1rem; }
+    .drop-zone.compact .drop-hint  { font-size: 0.62rem; }
+
     .drop-glow {
       position: absolute; inset: 0; pointer-events: none;
       background: radial-gradient(ellipse at 50% 115%, rgba(255,85,0,0.08), transparent 58%);
@@ -317,48 +328,96 @@ const HTML_PAGE = `<!DOCTYPE html>
     }
     .drop-zone:hover .drop-glow,
     .drop-zone.dragover .drop-glow { opacity: 1; }
-    .drop-zone.dragover {
-      border-color: var(--accent); border-style: solid;
-      background: rgba(255,85,0,0.03);
-    }
-    .drop-zone.has-file { border-color: rgba(0,232,160,0.38); border-style: solid; }
-    .drop-zone.has-file .drop-glow {
-      background: radial-gradient(ellipse at 50% 115%, rgba(0,232,160,0.07), transparent 58%);
-      opacity: 1;
-    }
+    .drop-zone.dragover { border-color: var(--accent); border-style: solid; background: rgba(255,85,0,0.03); }
 
     .drop-ring {
       display: inline-flex; align-items: center; justify-content: center;
       width: 56px; height: 56px; border-radius: 50%;
       border: 1px solid rgba(255,85,0,0.26); margin-bottom: 1rem;
-      transition: border-color 0.25s, box-shadow 0.25s;
+      transition: border-color 0.25s, box-shadow 0.25s, width 0.3s, height 0.3s;
     }
     .drop-zone.dragover .drop-ring { border-color: var(--accent); box-shadow: 0 0 22px rgba(255,85,0,0.32); }
-    .drop-zone.has-file .drop-ring { border-color: rgba(0,232,160,0.5); box-shadow: 0 0 18px rgba(0,232,160,0.2); }
     .drop-ring svg {
       width: 23px; height: 23px; stroke: var(--accent); stroke-width: 1.5;
       fill: none; stroke-linecap: round; stroke-linejoin: round;
-      transition: stroke 0.25s;
+      transition: stroke 0.25s, width 0.3s, height 0.3s;
     }
-    .drop-zone.has-file .drop-ring svg { stroke: var(--success); }
-
     .drop-title {
       font-family: var(--sans); font-weight: 700; font-size: 0.9rem;
       color: var(--text); margin-bottom: 0.35rem;
+      transition: font-size 0.3s;
     }
-    .drop-hint { font-size: 0.67rem; color: var(--text-dim); letter-spacing: 0.07em; }
-    .file-meta {
-      display: none; margin-top: 0.75rem;
-      font-size: 0.69rem; color: var(--success); letter-spacing: 0.05em;
+    .drop-hint {
+      font-size: 0.67rem; color: var(--text-dim); letter-spacing: 0.07em;
+      transition: font-size 0.3s;
     }
     #file-input { display: none; }
 
+    /* ── File queue ── */
+    .file-list {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: 3px; overflow: hidden;
+      margin-bottom: 0.6rem;
+      max-height: 220px; overflow-y: auto;
+    }
+    .file-list::-webkit-scrollbar { width: 4px; }
+    .file-list::-webkit-scrollbar-track { background: transparent; }
+    .file-list::-webkit-scrollbar-thumb { background: rgba(255,85,0,0.3); border-radius: 2px; }
+
+    .file-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid rgba(255,85,0,0.08);
+      transition: background 0.2s;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-item.uploading { background: rgba(255,85,0,0.06); }
+    .file-item.done      { background: rgba(0,232,160,0.05); }
+    .file-item.error     { background: rgba(255,51,85,0.07); }
+
+    .fi-icon {
+      font-size: 0.8rem; width: 16px; text-align: center; flex-shrink: 0;
+      line-height: 1;
+    }
+    .fi-icon.pending  { color: var(--text-dim); }
+    .fi-icon.uploading { color: var(--accent); animation: iconBob 0.7s ease-in-out infinite alternate; }
+    .fi-icon.done     { color: var(--success); }
+    .fi-icon.error    { color: var(--error); }
+    @keyframes iconBob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+
+    .fi-info { flex: 1; min-width: 0; }
+    .fi-name {
+      font-size: 0.75rem; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fi-meta { font-size: 0.63rem; color: var(--text-dim); margin-top: 2px; }
+    .fi-meta.err { color: var(--error); opacity: 0.85; }
+
+    .fi-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-dim); font-size: 1rem; padding: 0 3px; line-height: 1;
+      flex-shrink: 0; transition: color 0.15s;
+    }
+    .fi-remove:hover { color: var(--error); }
+
+    .queue-summary {
+      font-size: 0.62rem; color: var(--text-dim);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      text-align: right; margin-bottom: 0.6rem;
+    }
+
     /* ── Progress ── */
+    .progress-label {
+      display: none;
+      font-size: 0.63rem; color: var(--text-dim);
+      letter-spacing: 0.08em; margin-bottom: 5px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
     .progress-wrap {
       display: none; height: 2px;
       background: rgba(255,255,255,0.05);
-      border-radius: 2px; overflow: hidden;
-      margin-bottom: 0.85rem;
+      border-radius: 2px; overflow: hidden; margin-bottom: 0.85rem;
     }
     .progress-bar {
       height: 100%; width: 0%;
@@ -387,14 +446,8 @@ const HTML_PAGE = `<!DOCTYPE html>
       letter-spacing: 0.03em;
       animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .result-msg.success {
-      background: var(--success-bg); border-color: var(--success);
-      color: rgba(0,232,160,0.92);
-    }
-    .result-msg.error {
-      background: var(--error-bg); border-color: var(--error);
-      color: rgba(255,80,110,0.92);
-    }
+    .result-msg.success { background: var(--success-bg); border-color: var(--success); color: rgba(0,232,160,0.92); }
+    .result-msg.error   { background: var(--error-bg);   border-color: var(--error);   color: rgba(255,80,110,0.92); }
     .result-msg a { color: var(--accent-gold); text-decoration: none; }
     .result-msg a:hover { text-decoration: underline; }
 
@@ -472,17 +525,27 @@ const HTML_PAGE = `<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- Topbar with avatar -->
   <div class="topbar">
     <div class="user-chip">
-      <div class="live-dot"></div>
-      <span>Session: <strong id="display-name"></strong></span>
+      <div class="avatar-wrap">
+        <img id="avatar-img" class="avatar-img" src="" alt=""
+             onerror="this.style.display='none';document.getElementById('avatar-fb').style.display='flex'" />
+        <div id="avatar-fb" class="avatar-fb"><span id="avatar-initials"></span></div>
+        <div class="live-dot"></div>
+      </div>
+      <div class="user-info">
+        <div class="user-label">Session</div>
+        <div class="user-name-text" id="display-name"></div>
+      </div>
     </div>
     <button class="btn-logout" id="logout-btn">Logout</button>
   </div>
 
   <div class="view-title">Trans<em>mit</em></div>
-  <div class="view-sub">Max 50 MB &middot; Forwarded via Telegram Bot</div>
+  <div class="view-sub">Drag files &middot; Max 50 MB each &middot; Bot API</div>
 
+  <!-- Drop zone (becomes compact when files are queued) -->
   <div class="drop-zone" id="drop-zone">
     <div class="drop-glow"></div>
     <div class="drop-ring">
@@ -492,17 +555,22 @@ const HTML_PAGE = `<!DOCTYPE html>
         <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
       </svg>
     </div>
-    <div class="drop-title">Drop file here</div>
-    <div class="drop-hint">or click to browse &middot; max 50 MB</div>
-    <div class="file-meta" id="file-meta"></div>
+    <div class="drop-title" id="drop-title">Drop files here</div>
+    <div class="drop-hint">or click to browse &middot; select multiple</div>
   </div>
-  <input type="file" id="file-input" />
+  <input type="file" id="file-input" multiple />
 
+  <!-- File queue list -->
+  <div class="file-list" id="file-list"></div>
+  <div class="queue-summary" id="queue-summary"></div>
+
+  <!-- Progress -->
+  <div class="progress-label" id="progress-label"></div>
   <div class="progress-wrap" id="progress-wrap">
     <div class="progress-bar" id="progress-bar"></div>
   </div>
 
-  <button class="btn-primary" id="upload-btn">Transmit File</button>
+  <button class="btn-primary" id="upload-btn">Transmit Files</button>
   <div class="result-msg" id="result-msg"></div>
 
   <div class="foot">
@@ -515,6 +583,7 @@ const HTML_PAGE = `<!DOCTYPE html>
 <script>
   var MAX_BYTES = 50 * 1024 * 1024;
 
+  // ── Storage helpers ──────────────────────────────────────
   function getToken()   { return localStorage.getItem("tmu_token"); }
   function setToken(t)  { localStorage.setItem("tmu_token", t); }
   function clearToken() { localStorage.removeItem("tmu_token"); }
@@ -531,13 +600,45 @@ const HTML_PAGE = `<!DOCTYPE html>
     document.getElementById("upload-view").style.display = name === "upload" ? "" : "none";
   }
 
-  // init
+  // ── Utility ──────────────────────────────────────────────
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / 1048576).toFixed(2) + " MB";
+  }
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function initials(name) {
+    return name ? name.slice(0,2).toUpperCase() : "??";
+  }
+
+  // ── Avatar setup ─────────────────────────────────────────
+  function applyAvatar(payload) {
+    var img = document.getElementById("avatar-img");
+    var fb  = document.getElementById("avatar-fb");
+    var ini = document.getElementById("avatar-initials");
+
+    ini.textContent = initials(payload.sub);
+
+    if (payload.avatar) {
+      img.src = "/avatars/" + payload.avatar;
+      img.style.display = "block";
+      fb.style.display = "none";
+    } else {
+      img.style.display = "none";
+      fb.style.display = "flex";
+    }
+  }
+
+  // ── Init: restore session ─────────────────────────────────
   (function() {
     var token = getToken();
     if (token) {
       var p = parsePayload(token);
       if (p && p.exp > Math.floor(Date.now() / 1000)) {
         document.getElementById("display-name").textContent = p.sub;
+        applyAvatar(p);
         showView("upload");
         return;
       }
@@ -546,7 +647,7 @@ const HTML_PAGE = `<!DOCTYPE html>
     showView("login");
   })();
 
-  // login
+  // ── Login ─────────────────────────────────────────────────
   document.getElementById("login-form").addEventListener("submit", function(e) {
     e.preventDefault();
     var btn   = document.getElementById("login-btn");
@@ -567,7 +668,9 @@ const HTML_PAGE = `<!DOCTYPE html>
     .then(function(r) {
       if (!r.ok) throw new Error(r.d.error || "Login failed");
       setToken(r.d.token);
-      document.getElementById("display-name").textContent = parsePayload(r.d.token).sub;
+      var p = parsePayload(r.d.token);
+      document.getElementById("display-name").textContent = p.sub;
+      applyAvatar(p);
       showView("upload");
     })
     .catch(function(err) {
@@ -580,46 +683,121 @@ const HTML_PAGE = `<!DOCTYPE html>
     });
   });
 
-  // logout
+  // ── Logout ────────────────────────────────────────────────
   document.getElementById("logout-btn").addEventListener("click", function() {
     clearToken();
+    fileQueue = [];
     document.getElementById("username").value = "";
     document.getElementById("password").value = "";
     showView("login");
   });
 
-  // drag & drop
-  var selectedFile = null;
-  var dropZone     = document.getElementById("drop-zone");
-  var fileInput    = document.getElementById("file-input");
-  var fileMeta     = document.getElementById("file-meta");
+  // ── File queue ────────────────────────────────────────────
+  // Each entry: { file: File, status: "pending"|"uploading"|"done"|"error", errMsg: "" }
+  var fileQueue = [];
 
-  function selectFile(file) {
-    if (file.size > MAX_BYTES) {
-      showResult("error", "File is too large (max 50 MB).");
+  function renderQueue() {
+    var listEl    = document.getElementById("file-list");
+    var summaryEl = document.getElementById("queue-summary");
+    var dropZone  = document.getElementById("drop-zone");
+    var dropTitle = document.getElementById("drop-title");
+
+    if (fileQueue.length === 0) {
+      listEl.style.display = "none";
+      summaryEl.style.display = "none";
+      dropZone.classList.remove("compact");
+      dropTitle.textContent = "Drop files here";
       return;
     }
-    selectedFile = file;
-    dropZone.classList.add("has-file");
-    fileMeta.textContent = file.name + "  \u2014  " + (file.size / 1048576).toFixed(2) + " MB";
-    fileMeta.style.display = "block";
-    document.getElementById("result-msg").style.display = "none";
+
+    dropZone.classList.add("compact");
+    dropTitle.textContent = "Drop more files";
+
+    // Build list
+    listEl.innerHTML = "";
+    var totalBytes = 0;
+    fileQueue.forEach(function(item, i) {
+      totalBytes += item.file.size;
+
+      var iconChar  = item.status === "done"      ? "&#10003;"
+                    : item.status === "error"     ? "&#10007;"
+                    : item.status === "uploading" ? "&#8593;"
+                    : "&middot;";
+
+      var row = document.createElement("div");
+      row.className = "file-item " + item.status;
+      row.innerHTML =
+        '<div class="fi-icon ' + item.status + '">' + iconChar + '</div>' +
+        '<div class="fi-info">' +
+          '<div class="fi-name">' + escHtml(item.file.name) + '</div>' +
+          '<div class="fi-meta' + (item.errMsg ? ' err' : '') + '">' +
+            (item.errMsg ? escHtml(item.errMsg) : fmtSize(item.file.size)) +
+          '</div>' +
+        '</div>' +
+        (item.status === "pending"
+          ? '<button class="fi-remove" data-i="' + i + '" title="Remove">&times;</button>'
+          : '');
+
+      listEl.appendChild(row);
+    });
+
+    // Remove button handler
+    listEl.querySelectorAll(".fi-remove").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        var idx = parseInt(this.getAttribute("data-i"), 10);
+        fileQueue.splice(idx, 1);
+        renderQueue();
+      });
+    });
+
+    listEl.style.display = "block";
+
+    var pendingCount = fileQueue.filter(function(f) { return f.status === "pending"; }).length;
+    summaryEl.textContent = fileQueue.length + " file" + (fileQueue.length !== 1 ? "s" : "")
+      + " \u00B7 " + fmtSize(totalBytes)
+      + (pendingCount < fileQueue.length ? " \u00B7 " + pendingCount + " pending" : "");
+    summaryEl.style.display = "block";
   }
+
+  function addFiles(fileList) {
+    var existingNames = fileQueue.map(function(f) { return f.file.name; });
+    var rejected = [];
+
+    Array.prototype.forEach.call(fileList, function(file) {
+      if (existingNames.indexOf(file.name) !== -1) return; // skip duplicate
+      if (file.size > MAX_BYTES) { rejected.push(file.name); return; }
+      fileQueue.push({ file: file, status: "pending", errMsg: "" });
+      existingNames.push(file.name);
+    });
+
+    renderQueue();
+
+    if (rejected.length) {
+      showResult("error", "Skipped (too large): " + rejected.map(escHtml).join(", "));
+    } else {
+      document.getElementById("result-msg").style.display = "none";
+    }
+  }
+
+  // ── Drop zone events ──────────────────────────────────────
+  var dropZone  = document.getElementById("drop-zone");
+  var fileInput = document.getElementById("file-input");
 
   dropZone.addEventListener("click", function() { fileInput.click(); });
   fileInput.addEventListener("change", function() {
-    if (fileInput.files[0]) selectFile(fileInput.files[0]);
+    if (fileInput.files.length) addFiles(fileInput.files);
+    fileInput.value = ""; // reset so same file can be re-added after removal
   });
-  dropZone.addEventListener("dragover", function(e) {
-    e.preventDefault(); dropZone.classList.add("dragover");
-  });
-  dropZone.addEventListener("dragleave", function() { dropZone.classList.remove("dragover"); });
+  dropZone.addEventListener("dragover",  function(e) { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", function()  { dropZone.classList.remove("dragover"); });
   dropZone.addEventListener("drop", function(e) {
-    e.preventDefault(); dropZone.classList.remove("dragover");
-    if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   });
 
-  // upload via XHR for progress events
+  // ── Result helper ─────────────────────────────────────────
   function showResult(type, html) {
     var el = document.getElementById("result-msg");
     el.className = "result-msg " + type;
@@ -627,67 +805,98 @@ const HTML_PAGE = `<!DOCTYPE html>
     el.style.display = "block";
   }
 
-  document.getElementById("upload-btn").addEventListener("click", function() {
-    if (!selectedFile) { showResult("error", "Please select a file first."); return; }
+  // ── Single file XHR (returns Promise) ────────────────────
+  function uploadFile(file, token, progressBar) {
+    return new Promise(function(resolve, reject) {
+      var form = new FormData();
+      form.append("file", file, file.name);
+
+      var xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", function(e) {
+        if (e.lengthComputable) {
+          progressBar.style.width = Math.round(e.loaded / e.total * 100) + "%";
+        }
+      });
+      xhr.addEventListener("load", function() {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          if (xhr.status === 200 && data.success) { resolve(data); return; }
+          reject(new Error(data.error || "HTTP " + xhr.status));
+        } catch(e) { reject(new Error("Server error")); }
+      });
+      xhr.addEventListener("error", function() { reject(new Error("Network error")); });
+      xhr.open("POST", "/upload");
+      xhr.setRequestHeader("Authorization", "Bearer " + token);
+      xhr.send(form);
+    });
+  }
+
+  // ── Upload all pending files sequentially ────────────────
+  document.getElementById("upload-btn").addEventListener("click", async function() {
+    var pending = fileQueue.filter(function(f) { return f.status === "pending"; });
+    if (pending.length === 0) { showResult("error", "No files queued. Drop some files first."); return; }
+
     var token = getToken();
     if (!token) { clearToken(); showView("login"); return; }
 
+    var btn          = document.getElementById("upload-btn");
     var progressWrap = document.getElementById("progress-wrap");
     var progressBar  = document.getElementById("progress-bar");
-    var uploadBtn    = document.getElementById("upload-btn");
+    var progressLbl  = document.getElementById("progress-label");
 
+    btn.disabled = true;
+    btn.textContent = "Transmitting\u2026";
     progressWrap.style.display = "block";
-    progressBar.style.width = "0%";
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = "Transmitting\u2026";
+    progressLbl.style.display = "block";
     document.getElementById("result-msg").style.display = "none";
 
-    var form = new FormData();
-    form.append("file", selectedFile, selectedFile.name);
+    var successCount = 0;
+    var errorCount   = 0;
+    var doneIdx      = 0;
 
-    var xhr = new XMLHttpRequest();
+    for (var i = 0; i < fileQueue.length; i++) {
+      var item = fileQueue[i];
+      if (item.status !== "pending") continue;
 
-    xhr.upload.addEventListener("progress", function(e) {
-      if (e.lengthComputable) {
-        progressBar.style.width = Math.round(e.loaded / e.total * 100) + "%";
-      }
-    });
+      doneIdx++;
+      item.status = "uploading";
+      renderQueue();
 
-    xhr.addEventListener("load", function() {
-      progressBar.style.width = "100%";
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = "Transmit File";
+      progressBar.style.width = "0%";
+      progressLbl.textContent =
+        "File " + doneIdx + " of " + pending.length + " \u2014 " + item.file.name;
 
       try {
-        var data = JSON.parse(xhr.responseText);
-        if (xhr.status === 200 && data.success) {
-          var link = data.message_link
-            ? " &mdash; <a href='" + data.message_link + "' target='_blank' rel='noopener'>View in Telegram</a>"
-            : "";
-          showResult("success", "&#10003; File delivered to Telegram." + link);
-          selectedFile = null;
-          dropZone.classList.remove("has-file");
-          fileMeta.style.display = "none";
-          fileInput.value = "";
-        } else {
-          showResult("error", data.error || "Upload failed.");
-        }
-      } catch(e) {
-        showResult("error", "Unexpected server response.");
+        await uploadFile(item.file, token, progressBar);
+        item.status = "done";
+        successCount++;
+      } catch(err) {
+        item.status = "error";
+        item.errMsg = err.message;
+        errorCount++;
       }
-      setTimeout(function() { progressWrap.style.display = "none"; }, 1800);
-    });
+      renderQueue();
+    }
 
-    xhr.addEventListener("error", function() {
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = "Transmit File";
-      progressWrap.style.display = "none";
-      showResult("error", "Network error \u2014 transmission failed.");
-    });
+    btn.disabled = false;
+    btn.textContent = "Transmit Files";
+    progressLbl.style.display = "none";
+    progressBar.style.width = "100%";
+    setTimeout(function() { progressWrap.style.display = "none"; }, 1500);
 
-    xhr.open("POST", "/upload");
-    xhr.setRequestHeader("Authorization", "Bearer " + token);
-    xhr.send(form);
+    if (errorCount === 0) {
+      showResult("success",
+        "&#10003; All " + successCount + " file" + (successCount !== 1 ? "s" : "") + " delivered to Telegram.");
+      // Clear done items from queue after a moment
+      setTimeout(function() {
+        fileQueue = fileQueue.filter(function(f) { return f.status !== "done"; });
+        renderQueue();
+      }, 2000);
+    } else if (successCount === 0) {
+      showResult("error", "All " + errorCount + " file" + (errorCount !== 1 ? "s" : "") + " failed. See details above.");
+    } else {
+      showResult("error", successCount + " delivered, " + errorCount + " failed. See details above.");
+    }
   });
 </script>
 </body>
@@ -720,9 +929,9 @@ async function handleLogin(request, env) {
     return Response.json({ error: "Invalid username or password" }, { status: 401 });
   }
 
-  const exp   = Math.floor(Date.now() / 1000) + 86400; // 24 h
+  const exp   = Math.floor(Date.now() / 1000) + 86400;
   const token = await createToken(
-    { sub: user.username, chat_id: user.telegram_chat_id, exp },
+    { sub: user.username, chat_id: user.telegram_chat_id, avatar: user.avatar ?? null, exp },
     env.JWT_SECRET
   );
 
@@ -732,14 +941,10 @@ async function handleLogin(request, env) {
 async function handleUpload(request, env) {
   const authHeader = request.headers.get("Authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!token) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!token) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const payload = await verifyToken(token, env.JWT_SECRET);
-  if (!payload) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
-  }
+  if (!payload) return Response.json({ error: "Invalid or expired token" }, { status: 401 });
 
   let formData;
   try { formData = await request.formData(); }
@@ -749,7 +954,6 @@ async function handleUpload(request, env) {
   if (!file || typeof file === "string") {
     return Response.json({ error: "No file provided" }, { status: 400 });
   }
-
   if (file.size > 50 * 1024 * 1024) {
     return Response.json({ error: "File exceeds 50 MB limit" }, { status: 413 });
   }
@@ -764,7 +968,7 @@ async function handleUpload(request, env) {
       `https://api.telegram.org/bot${env.BOT_TOKEN}/sendDocument`,
       { method: "POST", body: tgForm }
     );
-  } catch (err) {
+  } catch {
     return Response.json({ error: "Failed to reach Telegram API" }, { status: 502 });
   }
 
@@ -778,11 +982,9 @@ async function handleUpload(request, env) {
 
   const messageId = tgData.result.message_id;
   const chatId    = String(payload.chat_id);
-
   let messageLink = null;
   if (chatId.startsWith("-100")) {
-    const numericId = chatId.slice(4);
-    messageLink = `https://t.me/c/${numericId}/${messageId}`;
+    messageLink = `https://t.me/c/${chatId.slice(4)}/${messageId}`;
   }
 
   return Response.json(
@@ -803,20 +1005,9 @@ export default {
     if (method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
-
-    if (method === "GET"  && pathname === "/") {
-      return new Response(HTML_PAGE, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-    }
-
-    if (method === "POST" && pathname === "/login") {
-      return handleLogin(request, env);
-    }
-
-    if (method === "POST" && pathname === "/upload") {
-      return handleUpload(request, env);
-    }
+    if (method === "GET"  && pathname === "/")       return new Response(HTML_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    if (method === "POST" && pathname === "/login")  return handleLogin(request, env);
+    if (method === "POST" && pathname === "/upload") return handleUpload(request, env);
 
     return Response.json({ error: "Not found" }, { status: 404 });
   },
