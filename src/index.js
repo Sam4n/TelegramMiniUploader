@@ -5,8 +5,8 @@
 // =============================================================================
 const USERS = [
   { username: "saman", password: "CHANGE_ME_admin_password", telegram_chat_id: "YOUR_CHAT_ID", avatar: "saman.jpg", isAdmin: true },
-  { username: "javad", password: "CHANGE_ME_user1_password",  telegram_chat_id: "USER1_CHAT_ID", avatar: "javad.jpg" },
-  { username: "domenico",  password: "CHANGE_ME_admin_password", telegram_chat_id: "123456789", avatar: "saeed.jpg" }
+  { username: "javad", password: "CHANGE_ME_user1_password", telegram_chat_id: "USER1_CHAT_ID", avatar: "javad.jpg" },
+  { username: "domenico", password: "CHANGE_ME_admin_password", telegram_chat_id: "USER2_CHAT_ID", avatar: "saeed.jpg" }
 ];
 
 // =============================================================================
@@ -31,8 +31,8 @@ async function createToken(payload, secret) {
     false, ["sign"]
   );
   const header = b64urlEncode(enc.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
-  const body   = b64urlEncode(enc.encode(JSON.stringify(payload)));
-  const sig    = await crypto.subtle.sign("HMAC", key, enc.encode(`${header}.${body}`));
+  const body = b64urlEncode(enc.encode(JSON.stringify(payload)));
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`${header}.${body}`));
   return `${header}.${body}.${b64urlEncode(sig)}`;
 }
 
@@ -977,7 +977,7 @@ const HTML_PAGE = `<!DOCTYPE html>
 
 function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin":  "*",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
@@ -998,10 +998,12 @@ async function handleLogin(request, env) {
     return Response.json({ error: "Invalid username or password" }, { status: 401 });
   }
 
-  const exp   = Math.floor(Date.now() / 1000) + 86400;
+  const exp = Math.floor(Date.now() / 1000) + 86400;
   const token = await createToken(
-    { sub: user.username, chat_id: user.telegram_chat_id, avatar: user.avatar ?? null,
-      isAdmin: user.isAdmin ?? false, exp },
+    {
+      sub: user.username, chat_id: user.telegram_chat_id, avatar: user.avatar ?? null,
+      isAdmin: user.isAdmin ?? false, exp
+    },
     env.JWT_SECRET
   );
 
@@ -1051,7 +1053,7 @@ async function handleUpload(request, env) {
   }
 
   const messageId = tgData.result.message_id;
-  const chatId    = String(payload.chat_id);
+  const chatId = String(payload.chat_id);
   let messageLink = null;
   if (chatId.startsWith("-100")) {
     messageLink = `https://t.me/c/${chatId.slice(4)}/${messageId}`;
@@ -1101,10 +1103,10 @@ async function handleDownload(request, env) {
   const safeName = encodeURIComponent(payload.name ?? "file");
   return new Response(fileRes.body, {
     headers: {
-      "Content-Type":        fileRes.headers.get("Content-Type") ?? "application/octet-stream",
-      "Content-Length":      fileRes.headers.get("Content-Length") ?? "",
+      "Content-Type": fileRes.headers.get("Content-Type") ?? "application/octet-stream",
+      "Content-Length": fileRes.headers.get("Content-Length") ?? "",
       "Content-Disposition": `attachment; filename*=UTF-8''${safeName}`,
-      "Cache-Control":       "private, max-age=3600",
+      "Cache-Control": "private, max-age=3600",
     },
   });
 }
@@ -1129,8 +1131,8 @@ async function handleWebhook(request, env) {
   if (!msg) return new Response("ok");
 
   // Authorization: sender or chat must match a known user's telegram_chat_id
-  const senderId   = String(msg.from?.id ?? "");
-  const chatId     = String(msg.chat.id);
+  const senderId = String(msg.from?.id ?? "");
+  const chatId = String(msg.chat.id);
   const authorized = USERS.some(u =>
     u.telegram_chat_id === senderId || u.telegram_chat_id === chatId
   );
@@ -1139,7 +1141,7 @@ async function handleWebhook(request, env) {
     await tgSend(env.BOT_TOKEN, {
       chat_id: msg.chat.id,
       reply_to_message_id: msg.message_id,
-      text: "⛔ You are not authorized to use this bot.",
+      text: `⛔ You are not authorized to use this bot for ${chatId}.`,
     });
     return new Response("ok");
   }
@@ -1149,20 +1151,20 @@ async function handleWebhook(request, env) {
   let fileId = null, fileName = null, fileSize = 0;
 
   if (msg.document) {
-    fileId   = msg.document.file_id;
+    fileId = msg.document.file_id;
     fileName = msg.document.file_name ?? "file";
     fileSize = msg.document.file_size ?? 0;
   } else if (msg.photo) {
     const best = msg.photo[msg.photo.length - 1];
-    fileId   = best.file_id;
+    fileId = best.file_id;
     fileName = "photo.jpg";
     fileSize = best.file_size ?? 0;
   } else if (msg.video) {
-    fileId   = msg.video.file_id;
+    fileId = msg.video.file_id;
     fileName = msg.video.file_name ?? "video.mp4";
     fileSize = msg.video.file_size ?? 0;
   } else if (msg.audio) {
-    fileId   = msg.audio.file_id;
+    fileId = msg.audio.file_id;
     fileName = msg.audio.file_name ?? msg.audio.title ?? "audio";
     fileSize = msg.audio.file_size ?? 0;
   }
@@ -1189,8 +1191,8 @@ async function handleWebhook(request, env) {
   }
 
   // Build signed download link and reply with an inline button
-  const origin  = new URL(request.url).origin;
-  const dlExp   = Math.floor(Date.now() / 1000) + 7 * 86400;
+  const origin = new URL(request.url).origin;
+  const dlExp = Math.floor(Date.now() / 1000) + 7 * 86400;
   const dlToken = await createToken(
     { file_id: fileId, name: fileName, exp: dlExp },
     env.JWT_SECRET
@@ -1216,7 +1218,7 @@ async function handleWebhook(request, env) {
 // =============================================================================
 
 async function requireAdmin(request, env) {
-  const auth  = request.headers.get("Authorization") ?? "";
+  const auth = request.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return null;
   const payload = await verifyToken(token, env.JWT_SECRET);
@@ -1230,14 +1232,14 @@ async function handleAdminRoute(request, env, fn) {
 }
 
 async function handleAdminWebhookInfo(request, env) {
-  const res  = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/getWebhookInfo`);
+  const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/getWebhookInfo`);
   const data = await res.json();
   return Response.json(data, { headers: corsHeaders() });
 }
 
 async function handleAdminSetWebhook(request, env) {
   const origin = new URL(request.url).origin;
-  const res    = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/setWebhook`, {
+  const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/setWebhook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: `${origin}/webhook` }),
@@ -1247,7 +1249,7 @@ async function handleAdminSetWebhook(request, env) {
 }
 
 async function handleAdminDeleteWebhook(request, env) {
-  const res  = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/deleteWebhook`, { method: "POST" });
+  const res = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/deleteWebhook`, { method: "POST" });
   const data = await res.json();
   return Response.json(data, { headers: corsHeaders() });
 }
@@ -1259,19 +1261,19 @@ async function handleAdminDeleteWebhook(request, env) {
 export default {
   async fetch(request, env) {
     const { method, url } = request;
-    const { pathname }    = new URL(url);
+    const { pathname } = new URL(url);
 
     if (method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
-    if (method === "GET"  && pathname === "/")                      return new Response(HTML_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    if (method === "POST" && pathname === "/login")                 return handleLogin(request, env);
-    if (method === "POST" && pathname === "/upload")                return handleUpload(request, env);
-    if (method === "GET"  && pathname.startsWith("/dl/"))           return handleDownload(request, env);
-    if (method === "POST" && pathname === "/webhook")               return handleWebhook(request, env);
-    if (method === "GET"  && pathname === "/admin/webhook-info")    return handleAdminRoute(request, env, handleAdminWebhookInfo);
-    if (method === "POST" && pathname === "/admin/set-webhook")     return handleAdminRoute(request, env, handleAdminSetWebhook);
-    if (method === "POST" && pathname === "/admin/delete-webhook")  return handleAdminRoute(request, env, handleAdminDeleteWebhook);
+    if (method === "GET" && pathname === "/") return new Response(HTML_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    if (method === "POST" && pathname === "/login") return handleLogin(request, env);
+    if (method === "POST" && pathname === "/upload") return handleUpload(request, env);
+    if (method === "GET" && pathname.startsWith("/dl/")) return handleDownload(request, env);
+    if (method === "POST" && pathname === "/webhook") return handleWebhook(request, env);
+    if (method === "GET" && pathname === "/admin/webhook-info") return handleAdminRoute(request, env, handleAdminWebhookInfo);
+    if (method === "POST" && pathname === "/admin/set-webhook") return handleAdminRoute(request, env, handleAdminSetWebhook);
+    if (method === "POST" && pathname === "/admin/delete-webhook") return handleAdminRoute(request, env, handleAdminDeleteWebhook);
 
     return Response.json({ error: "Not found" }, { status: 404 });
   },
