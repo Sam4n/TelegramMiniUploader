@@ -4,8 +4,9 @@
 // If a user has no avatar, set avatar to null
 // =============================================================================
 const USERS = [
-  { username: "saman", password: "javad123", telegram_chat_id: "YOUR_CHAT_ID", avatar: "saman.jpg", isAdmin: true },
-  { username: "javad", password: "freedom",  telegram_chat_id: "YOUR_CHAT_ID", avatar: "javad.jpg" },
+  { username: "saman", password: "CHANGE_ME_admin_password", telegram_chat_id: "YOUR_CHAT_ID", avatar: "saman.jpg", isAdmin: true },
+  { username: "javad", password: "CHANGE_ME_user1_password",  telegram_chat_id: "USER1_CHAT_ID", avatar: "javad.jpg" },
+  { username: "domenico",  password: "CHANGE_ME_admin_password", telegram_chat_id: "123456789", avatar: "saeed.jpg" }
 ];
 
 // =============================================================================
