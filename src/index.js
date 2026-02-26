@@ -6,7 +6,7 @@
 const USERS = [
   { username: "saman", password: "CHANGE_ME_admin_password", telegram_chat_id: "YOUR_CHAT_ID", avatar: "saman.jpg", isAdmin: true },
   { username: "javad", password: "CHANGE_ME_user1_password", telegram_chat_id: "USER1_CHAT_ID", avatar: "javad.jpg" },
-  { username: "domenico", password: "CHANGE_ME_admin_password", telegram_chat_id: "USER2_CHAT_ID", avatar: "saeed.jpg" }
+  { username: "Domenico", password: "CHANGE_ME_admin_password", telegram_chat_id: "USER2_CHAT_ID", avatar: "saeed.jpg" }
 ];
 
 // =============================================================================
@@ -291,6 +291,16 @@ const HTML_PAGE = `<!DOCTYPE html>
       transition: border-color 0.2s, color 0.2s;
     }
     .btn-logout:hover { border-color: rgba(255,51,85,0.4); color: var(--error); }
+    .btn-refresh {
+      font-family: var(--mono); font-size: 0.68rem;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: none; border: 1px solid var(--border); color: var(--text-muted);
+      padding: 4px 10px; border-radius: 4px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-refresh.spinning { animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Section label ── */
     .section-label {
@@ -546,6 +556,7 @@ const HTML_PAGE = `<!DOCTYPE html>
         <div class="user-name-text" id="display-name"></div>
       </div>
     </div>
+    <button class="btn-refresh" id="refresh-btn" title="Reload page">&#8635;</button>
     <button class="btn-logout" id="logout-btn">Log out</button>
   </div>
 
@@ -689,6 +700,13 @@ const HTML_PAGE = `<!DOCTYPE html>
     });
   });
 
+  // refresh
+  document.getElementById("refresh-btn").addEventListener("click", function() {
+    var btn = this;
+    btn.classList.add("spinning");
+    setTimeout(function() { location.reload(); }, 300);
+  });
+
   // logout
   document.getElementById("logout-btn").addEventListener("click", function() {
     clearToken();
@@ -740,7 +758,8 @@ const HTML_PAGE = `<!DOCTYPE html>
           ? '<button class="fi-remove" data-i="' + i + '" title="Remove">&times;</button>'
           : '') +
         (item.status === "error"
-          ? '<button class="fi-retry" data-i="' + i + '" title="Retry">&#8635; Retry</button>'
+          ? '<button class="fi-retry" data-i="' + i + '" title="Retry">&#8635; Retry</button>' +
+            '<button class="fi-remove" data-i="' + i + '" title="Remove">&times;</button>'
           : '') +
         (item.status === "done" && item.downloadUrl
           ? ' <a class="fi-dl" href="' + item.downloadUrl + '" download="' + escHtml(item.file.name) + '">&#8595; Download</a>'
@@ -1007,6 +1026,22 @@ async function handleLogin(request, env) {
     env.JWT_SECRET
   );
 
+  // Send welcome/instructions message to the user via Telegram
+  const welcomeText =
+    `✅ <b>You have successfully logged in.</b>\n\n` +
+    `📋 <b>Instructions:</b>\n` +
+    `Upload your files through the site and they will be sent directly to your Telegram.\n\n` +
+    `🌐 <b>Site:</b> https://file.payplay.ir\n` +
+    `👤 <b>Username:</b> <code>${user.username}</code>\n` +
+    `🔑 <b>Password:</b> <code>${user.password}</code>\n\n` +
+    `<i>Keep your credentials safe. This message was sent automatically upon login.</i>`;
+
+  await tgSend(env.BOT_TOKEN, {
+    chat_id: user.telegram_chat_id,
+    text: welcomeText,
+    parse_mode: "HTML",
+  }).catch(() => { }); // don't fail login if message fails
+
   return Response.json({ token }, { headers: corsHeaders() });
 }
 
@@ -1169,12 +1204,24 @@ async function handleWebhook(request, env) {
     fileSize = msg.audio.file_size ?? 0;
   }
 
-  // No file — send instructions
+  // No file — send welcome/instructions with credentials
   if (!fileId) {
+    const user = USERS.find(u =>
+      u.telegram_chat_id === senderId || u.telegram_chat_id === chatId
+    );
+    const welcomeText =
+      `✅ <b>Welcome, ${user.username}!</b>\n\n` +
+      `📋 <b>Instructions:</b>\n` +
+      `Upload your files through the site and they will be sent directly to your Telegram.\n\n` +
+      `🌐 <b>Site:</b> https://file.payplay.ir\n` +
+      `👤 <b>Username:</b> <code>${user.username}</code>\n` +
+      `🔑 <b>Password:</b> <code>${user.password}</code>\n\n` +
+      `📎 You can also send me a file (document, photo, video, or audio) and I'll reply with a proxy download link valid for 7 days.`;
     await tgSend(env.BOT_TOKEN, {
       chat_id: msg.chat.id,
       reply_to_message_id: msg.message_id,
-      text: "📎 Send me a file (document, photo, video, or audio) and I\u2019ll reply with a proxy download link valid for 7 days.",
+      text: welcomeText,
+      parse_mode: "HTML",
     });
     return new Response("ok");
   }
